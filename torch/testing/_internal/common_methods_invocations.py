@@ -10783,6 +10783,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_broadcast_to),
     OpInfo('broadcast_shapes',
            op=torch.broadcast_shapes,
@@ -10813,6 +10815,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                # https://github.com/pytorch/pytorch/issues/64997
                DecorateInfo(unittest.expectedFailure, 'TestNormalizeOperators', 'test_normalize_operator_exhaustive'),
@@ -10873,6 +10877,8 @@ op_db: List[OpInfo] = [
            dtypes=all_types_and_complex_and(torch.bool, torch.float16, torch.bfloat16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            supports_out=False,
            sample_inputs_func=sample_inputs_combinations),
     OpInfo('cartesian_prod',
@@ -10881,6 +10887,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_cartesian_prod,
            skips=(
                DecorateInfo(unittest.expectedFailure, 'TestMathBits', 'test_neg_view'),
@@ -11022,6 +11030,8 @@ op_db: List[OpInfo] = [
                    supports_sparse=True,
                    supports_forward_ad=True,
                    supports_fwgrad_bwgrad=True,
+                   # See https://github.com/pytorch/pytorch/pull/78358
+                   check_batched_forward_grad=False,
                    supports_out=False),
     UnaryUfuncInfo('conj_physical',
                    ref=np.conj,
@@ -11111,6 +11121,8 @@ op_db: List[OpInfo] = [
            sample_inputs_func=sample_inputs_corrcoef,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            supports_out=False),
     UnaryUfuncInfo('cos',
                    ref=np.cos,
@@ -11261,6 +11273,8 @@ op_db: List[OpInfo] = [
            dtypes=all_types_and_complex_and(torch.bool, torch.float16, torch.bfloat16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_diff),
     BinaryUfuncInfo('div',
                     aliases=('divide',),
@@ -11484,6 +11498,8 @@ op_db: List[OpInfo] = [
                          torch.bool, *() if (TEST_WITH_ROCM or not SM53OrLater) else (torch.half, torch.complex32)),
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      ),
     SpectralFuncInfo('fft.fft2',
                      aten_name='fft_fft2',
@@ -11496,6 +11512,8 @@ op_db: List[OpInfo] = [
                          torch.bool, *() if (TEST_WITH_ROCM or not SM53OrLater) else (torch.half, torch.complex32)),
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      decorators=[precisionOverride(
                          {torch.float: 1e-4, torch.cfloat: 1e-4})],
                      ),
@@ -11510,6 +11528,8 @@ op_db: List[OpInfo] = [
                          torch.bool, *() if (TEST_WITH_ROCM or not SM53OrLater) else (torch.half, torch.complex32)),
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      decorators=[precisionOverride(
                          {torch.float: 1e-4, torch.cfloat: 1e-4})],
                      ),
@@ -11524,6 +11544,8 @@ op_db: List[OpInfo] = [
                          torch.bool, *() if (TEST_WITH_ROCM or not SM53OrLater) else (torch.half, torch.complex32)),
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      check_batched_gradgrad=False),
     SpectralFuncInfo('fft.hfft2',
                      aten_name='fft_hfft2',
@@ -11537,6 +11559,8 @@ op_db: List[OpInfo] = [
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
                      check_batched_gradgrad=False,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      decorators=[
                          DecorateInfo(
                              precisionOverride({torch.float: 2e-4, torch.cfloat: 2e-4}),
@@ -11554,6 +11578,8 @@ op_db: List[OpInfo] = [
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
                      check_batched_gradgrad=False,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      decorators=[
                          DecorateInfo(
                              precisionOverride({torch.float: 2e-4, torch.cfloat: 2e-4}),
@@ -11609,6 +11635,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.OneD,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and_complex_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11620,6 +11648,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.TwoD,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and_complex_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11636,6 +11666,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.ND,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and_complex_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11652,6 +11684,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.OneD,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11665,6 +11699,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.TwoD,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11684,6 +11720,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.ND,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archss
@@ -11705,6 +11743,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.OneD,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and_complex_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11717,6 +11757,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.TwoD,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and_complex_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -11734,6 +11776,8 @@ op_db: List[OpInfo] = [
                      ndimensional=SpectralFuncType.ND,
                      supports_forward_ad=True,
                      supports_fwgrad_bwgrad=True,
+                     # See https://github.com/pytorch/pytorch/pull/78358
+                     check_batched_forward_grad=False,
                      dtypes=all_types_and_complex_and(torch.bool),
                      # rocFFT doesn't support Half/Complex Half Precision FFT
                      # CUDA supports Half/ComplexHalf Precision FFT only on SM53 or later archs
@@ -12024,6 +12068,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                DecorateInfo(unittest.expectedFailure, 'TestNormalizeOperators', 'test_normalize_operator_exhaustive'),
                # following tests give a runtime error with undefined value tensor
@@ -12110,6 +12156,8 @@ op_db: List[OpInfo] = [
            dtypes=floating_and_complex_types(),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_linalg_cholesky,
            gradcheck_wrapper=gradcheck_wrapper_hermitian_input,
            skips=(
@@ -12122,6 +12170,8 @@ op_db: List[OpInfo] = [
            dtypes=floating_and_complex_types(),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_linalg_cholesky,
            gradcheck_wrapper=gradcheck_wrapper_hermitian_input,
            skips=(
@@ -12836,7 +12886,9 @@ op_db: List[OpInfo] = [
            ],
            supports_out=False,
            supports_fwgrad_bwgrad=True,
-           supports_forward_ad=True),
+           supports_forward_ad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,),
     OpInfo('meshgrid',
            variant_test_name='list_of_tensors',
            # Unlike the variant above, we do not use np.meshgrid as a
@@ -12854,7 +12906,9 @@ op_db: List[OpInfo] = [
            supports_out=False,
            autodiff_nonfusible_nodes=[],
            supports_fwgrad_bwgrad=True,
-           supports_forward_ad=True),
+           supports_forward_ad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,),
     OpInfo('min',
            variant_test_name='reduction_with_dim',
            dtypes=all_types_and(torch.float16, torch.bfloat16, torch.bool),
@@ -14853,6 +14907,8 @@ op_db: List[OpInfo] = [
            dtypes=all_types_and_complex_and(torch.bool, torch.float16, torch.bfloat16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_outer,),
     OpInfo('ormqr',
            op=torch.ormqr,
@@ -15514,6 +15570,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_hsplit,
            error_inputs_func=error_inputs_hsplit,),
     OpInfo('vsplit',
@@ -15521,6 +15579,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_vsplit,
            error_inputs_func=error_inputs_vsplit,),
     OpInfo('dsplit',
@@ -15528,6 +15588,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_dsplit,
            error_inputs_func=error_inputs_dsplit,),
     OpInfo('triangular_solve',
@@ -15934,6 +15996,8 @@ op_db: List[OpInfo] = [
            check_batched_gradgrad=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_linalg_pinv_hermitian,
            gradcheck_wrapper=gradcheck_wrapper_hermitian_input,
            decorators=[skipCUDAIfNoMagma, skipCPUIfNoLapack],
@@ -16226,6 +16290,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_ravel,
            ),
     OpInfo('reshape',
@@ -16274,6 +16340,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_atleast1d2d3d,
            skips=(
                # JIT does not support variadic tensors.
@@ -16289,6 +16357,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                DecorateInfo(unittest.expectedFailure, "TestNormalizeOperators", "test_normalize_operator_exhaustive"),
                DecorateInfo(unittest.expectedFailure, 'TestJit', 'test_variant_consistency_jit', dtypes=[torch.float32]),
@@ -16300,6 +16370,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                DecorateInfo(unittest.expectedFailure, "TestNormalizeOperators", "test_normalize_operator_exhaustive"),
                DecorateInfo(unittest.expectedFailure, 'TestJit', 'test_variant_consistency_jit', dtypes=[torch.float32]),
@@ -16311,6 +16383,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_flatten,
            reference_inputs_func=reference_inputs_flatten,
            ),
@@ -16318,6 +16392,8 @@ op_db: List[OpInfo] = [
            dtypes=all_types_and_complex_and(torch.bool, torch.float16, torch.bfloat16, torch.chalf),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                # lambda impl
                DecorateInfo(unittest.expectedFailure, "TestNormalizeOperators", "test_normalize_operator_exhaustive"),),
@@ -17061,6 +17137,8 @@ op_db: List[OpInfo] = [
            error_inputs_func=error_inputs_hstack_dstack_vstack,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            ),
     OpInfo('unfold',
            op=lambda x, *args: x.unfold(*args),
@@ -17091,6 +17169,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_movedim_moveaxis),
     OpInfo('renorm',
            dtypes=floating_and_complex_types_and(torch.float16, torch.bfloat16),
@@ -17180,6 +17260,8 @@ op_db: List[OpInfo] = [
            supports_inplace_autograd=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_take_along_dim,
            gradcheck_nondet_tol=GRADCHECK_NONDET_TOL),
     ShapeFuncInfo('tile',
@@ -17194,18 +17276,24 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_trapezoid),
     OpInfo('trapezoid',
            dtypes=all_types_and_complex_and(torch.float16, torch.bfloat16),
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_trapezoid),
     OpInfo('cumulative_trapezoid',
            dtypes=all_types_and_complex_and(torch.bfloat16),
            dtypesIfCUDA=all_types_and_complex_and(torch.bfloat16, torch.float16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            supports_out=False,
            sample_inputs_func=sample_cumulative_trapezoid,),
     OpInfo('unsqueeze',
@@ -17213,6 +17301,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            # vmap does not support inplace views
            check_inplace_batched_forward_grad=False,
            assert_jit_shape_analysis=True,
@@ -17329,6 +17419,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                # lambda impl
                DecorateInfo(unittest.expectedFailure, 'TestNormalizeOperators', 'test_normalize_operator_exhaustive'),
@@ -17352,6 +17444,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            skips=(
                # lambda impl
                DecorateInfo(unittest.expectedFailure, 'TestNormalizeOperators', 'test_normalize_operator_exhaustive'),
@@ -17383,6 +17477,8 @@ op_db: List[OpInfo] = [
            dtypesIfROCM=floating_and_complex_types_and(torch.half, torch.bfloat16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_inner,
            ),
     OpInfo('tensordot',
@@ -17392,6 +17488,8 @@ op_db: List[OpInfo] = [
            dtypesIfROCM=floating_and_complex_types_and(torch.half, torch.bfloat16),
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            sample_inputs_func=sample_inputs_tensordot,
            skips=(
                # Skip operator schema test because this is a functional and not an operator.
@@ -17931,6 +18029,8 @@ op_db: List[OpInfo] = [
            supports_out=False,
            supports_forward_ad=True,
            supports_fwgrad_bwgrad=True,
+           # See https://github.com/pytorch/pytorch/pull/78358
+           check_batched_forward_grad=False,
            # vmap does not support inplace views
            check_inplace_batched_forward_grad=False,
            autodiff_fusible_nodes=[],  # aliases inputs, shouldn't be fused
@@ -18119,6 +18219,8 @@ op_db: List[OpInfo] = [
         sample_inputs_func=sample_inputs_tensorinv,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
+        # See https://github.com/pytorch/pytorch/pull/78358
+        check_batched_forward_grad=False,
         decorators=[skipCPUIfNoLapack, skipCUDAIfNoMagmaAndNoCusolver],
     ),
     OpInfo(
@@ -18741,6 +18843,8 @@ op_db: List[OpInfo] = [
         supports_out=False,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
+        # See https://github.com/pytorch/pytorch/pull/78358
+        check_batched_forward_grad=False,
         promotes_int_to_float=True,
         dtypes=all_types_and_complex_and(torch.float16, torch.bfloat16),
         skips=(
@@ -18768,7 +18872,6 @@ op_db: List[OpInfo] = [
         sample_inputs_func=sample_inputs_masked_std_var,
         gradcheck_wrapper=gradcheck_wrapper_masked_operation,
         check_batched_grad=True,
-        check_batched_forward_grad=True,
     ),
     ReductionOpInfo(
         '_masked.std',
@@ -18778,6 +18881,8 @@ op_db: List[OpInfo] = [
         supports_out=False,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
+        # See https://github.com/pytorch/pytorch/pull/78358
+        check_batched_forward_grad=False,
         promotes_int_to_float=True,
         dtypes=all_types_and_complex_and(torch.bfloat16),
         dtypesIfCUDA=all_types_and_complex_and(torch.float16, torch.bfloat16),
@@ -18805,7 +18910,6 @@ op_db: List[OpInfo] = [
         sample_inputs_func=sample_inputs_masked_std_var,
         gradcheck_wrapper=gradcheck_wrapper_masked_operation,
         check_batched_grad=True,
-        check_batched_forward_grad=True,
     ),
     OpInfo(
         '_masked.softmax',
@@ -19034,6 +19138,8 @@ op_db: List[OpInfo] = [
         supports_out=False,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
+        # See https://github.com/pytorch/pytorch/pull/78358
+        check_batched_forward_grad=False,
         skips=(
             DecorateInfo(
                 unittest.skip("Skipped!"),
@@ -19126,6 +19232,8 @@ op_db: List[OpInfo] = [
         supports_out=False,
         supports_forward_ad=True,
         supports_fwgrad_bwgrad=True,
+        # See https://github.com/pytorch/pytorch/pull/78358
+        check_batched_forward_grad=False,
     ),
     OpInfo(
         'scatter_reduce',
