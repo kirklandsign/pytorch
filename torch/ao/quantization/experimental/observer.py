@@ -4,6 +4,8 @@ the values observed during calibration (PTQ) or training (QAT).
 """
 
 import torch
+import itertools
+import math
 from torch.ao.quantization.observer import ObserverBase
 from typing import Tuple
 from torch.ao.quantization.utils import check_min_max_valid, calculate_qmin_qmax
@@ -33,17 +35,37 @@ class NonUniformQuantizationObserverBase(ObserverBase):
         # self.level_indices = level_indices
         self.b = b
         self.k = k
+        self.n = 0
 
         # self.has_customized_qrange = (quant_min is not None) and (quant_max is not None)
         # self.quant_min, self.quant_max = calculate_qmin_qmax(quant_min, quant_max, self.has_customized_qrange, self.dtype, self.reduce_range)
 
     # introduce signed numbers
-    def _calculate_qparams(self, min_val: torch.Tensor, max_val: torch.Tensor, signed: bool) -> Tuple[torch.Tensor, torch.Tensor]:
+    r""" Calculates nonuniform quantization parameters given min and max value tensors.
+
+    Args:
+        min_val: Minimum values per channel
+        max_val: Maximum values per channel
+
+    Returns:
+        gamma: gamma quantization parameter, defined to ensure that alpha is the maximum of the range
+        quantization_levels: non-uniform quantization levels, calculated according to APoT paper: (https://arxiv.org/pdf/1909.13144.pdf)
+        level_indices: int representation of quantization_levels
+    """
+    def _calculate_qparams(self, min_val: torch.Tensor, max_val: torch.Tensor, signed: bool) -> Tuple[float, torch.tensor, torch.tensor]:
         # compute alpha
         self.alpha = max_val
 
         # compute n and store as member variable
-        self.n = self.b // self.k
+        if self.k:
+            self.n = self.b // self.k
+
+        if self.n == 0:
+            return (0.0, torch.tensor([]), torch.tensor([]))
+
+        print("n", self.n)
+        print("b", self.b)
+        print("k", self.k)
 
         # store a tensor of subtensors (all levels)
         p_all = []
@@ -60,10 +82,12 @@ class NonUniformQuantizationObserverBase(ObserverBase):
                 if signed:
                     p_curr = torch.cat((p_curr, torch.tensor([-curr_ele])))
 
-            # sort tensor before adding to list
-            sorted, indices = torch.sort(p_curr)
-            print(sorted)
-            p_all.append(sorted)
+            if signed:
+                # sort tensor before adding to list
+                sorted, indices = torch.sort(p_curr)
+                p_all.append(sorted)
+            else:
+                p_all.append(p_curr)
 
         # gamma calculation:
         # loop through all tensors, add element at index 1 for each tensor
@@ -71,34 +95,90 @@ class NonUniformQuantizationObserverBase(ObserverBase):
         for tens in p_all:
             p_sum += tens[1]
 
+        print("p sum: ", p_sum)
+
         # assign gamma
         self.gamma = self.alpha / p_sum
 
-        # get all possible quantization levels
+        print("alpha: ", self.alpha)
+        print("gamma: ", self.gamma)
 
-        # tensor size: 2**b x 2**b
-        tensor_size = 2**self.b
-        levels = torch.zeros(size=(tensor_size, tensor_size))
-        for level0 in range(tensor_size):
-            for level1 in range(tensor_size):
-                levels[level0][level1] = self.gamma * (p0[level0] + p1[level1])
+        # hard code this to test
+        # p_all.append(torch.Tensor([0, 1, 0.25, 0.0625]))
 
-        # -------------------------------------------------------------------------------------------
+        # calculate cartesian product
+        cartesian_product = list(itertools.product(*p_all))
 
-        # if not check_min_max_valid(min_val, max_val):
-        #     return torch.tensor([1.0], device=min_val.device.type), torch.tensor([0], device=min_val.device.type)
+        print("**************")
 
-        # quant_min, quant_max = self.quant_min, self.quant_max
-        # min_val_neg = torch.min(min_val, torch.zeros_like(min_val))
-        # max_val_pos = torch.max(max_val, torch.zeros_like(max_val))
+        print(cartesian_product)
+        print(cartesian_product[0][0])
 
-        # device = min_val_neg.device
+        quantization_levels = []
+
+        # calculate sum of each row
+        for row in cartesian_product:
+            sum = 0
+            for ele in row:
+                sum += ele
+            quantization_levels.append(sum)
+
+        quantization_levels = [self.gamma * ele for ele in quantization_levels]
+
+        print(quantization_levels)
+        quantization_levels = torch.Tensor(quantization_levels)
+
+        quantization_levels, indices = quantization_levels.sort()
+
+        print("indices", indices)
+
+        # level_indices = float_to_apot(0.5686, quantization_levels)
+
+        print("tensors: ")
+        for t in p_all:
+            print(t)
+
+        print("quantization levels", quantization_levels)
+
+        level_indices = self.float_to_apot(0.5686, quantization_levels, indices)
+
+        print(level_indices)
+
+        return (self.gamma, quantization_levels, torch.tensor([]))
+
+    # from https://www.internalfb.com/intern/anp/view/?id=1964753
+    # generalize this to work for levels
+    def float_to_apot(self, x, levels, indices):
+        assert 0.0 <= x < 1.0
+
+        # brute force search for the right combination of levels
+        min_delta = math.inf
+
+        # min_index is a list to represent the index coordinate of min_delta within the n-dimensional matrix.
+        # min_index will have length n.
+        min_index = 0
+        index_to_base2 = []
+
+        zip_matrices = zip(levels, indices)
+
+        # look for the smallest difference between x and the boundary of the quantization level
+        for cur_val, index in zip_matrices:
+            cur_delta = abs(cur_val - x)
+            if cur_delta < min_delta:
+                min_delta = cur_delta
+                min_index = index
+
+        print("min index: ", min_index)
+
+        # convert min_index to base 2
+        res = bin(min_index)
+
+        return res
 
 class APoTObserver(NonUniformQuantizationObserverBase):
     # !!!!! fix this !!!!!
     alpha = 0
     gamma = 0
-    # level_indices = torch.Tensor()
     min_val = torch.Tensor()
     max_val = torch.Tensor()
 
