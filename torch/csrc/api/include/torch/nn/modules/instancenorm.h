@@ -3,8 +3,7 @@
 #include <torch/nn/modules/batchnorm.h>
 #include <torch/nn/options/instancenorm.h>
 
-namespace torch {
-namespace nn {
+namespace torch::nn {
 
 /// Base class for all (dimension-specialized) instance norm modules
 template <size_t D, typename Derived>
@@ -45,14 +44,22 @@ class InstanceNormImpl
   }
 
   /// Pretty prints the `InstanceNorm{1,2,3}d` module into the given `stream`.
-  void pretty_print(std::ostream& stream) const override;
+  void pretty_print(std::ostream& stream) const override {
+    stream << std::boolalpha << "torch::nn::InstanceNorm" << D << "d("
+           << this->options.num_features() << ", "
+           << "eps=" << this->options.eps() << ", "
+           << "momentum=" << this->options.momentum() << ", "
+           << "affine=" << this->options.affine() << ", "
+           << "track_running_stats=" << this->options.track_running_stats()
+           << ")";
+  }
 };
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ InstanceNorm1d
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /// Applies the InstanceNorm1d function.
-/// See https://pytorch.org/docs/master/nn.html#torch.nn.InstanceNorm1d to learn
+/// See https://pytorch.org/docs/main/nn.html#torch.nn.InstanceNorm1d to learn
 /// about the exact behavior of this module.
 ///
 /// See the documentation for `torch::nn::InstanceNorm1dOptions` class to learn
@@ -83,7 +90,7 @@ TORCH_MODULE(InstanceNorm1d);
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /// Applies the InstanceNorm2d function.
-/// See https://pytorch.org/docs/master/nn.html#torch.nn.InstanceNorm2d to learn
+/// See https://pytorch.org/docs/main/nn.html#torch.nn.InstanceNorm2d to learn
 /// about the exact behavior of this module.
 ///
 /// See the documentation for `torch::nn::InstanceNorm2dOptions` class to learn
@@ -114,7 +121,7 @@ TORCH_MODULE(InstanceNorm2d);
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 /// Applies the InstanceNorm3d function.
-/// See https://pytorch.org/docs/master/nn.html#torch.nn.InstanceNorm3d to learn
+/// See https://pytorch.org/docs/main/nn.html#torch.nn.InstanceNorm3d to learn
 /// about the exact behavior of this module.
 ///
 /// See the documentation for `torch::nn::InstanceNorm3dOptions` class to learn
@@ -141,5 +148,4 @@ class TORCH_API InstanceNorm3dImpl
 /// to learn about PyTorch's module storage semantics.
 TORCH_MODULE(InstanceNorm3d);
 
-} // namespace nn
-} // namespace torch
+} // namespace torch::nn

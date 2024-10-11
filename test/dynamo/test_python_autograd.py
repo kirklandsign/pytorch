@@ -2,10 +2,10 @@
 from typing import Callable, Dict, List, NamedTuple, Optional
 
 import torch
-
 import torch._dynamo
 from torch._dynamo.test_case import run_tests, TestCase
 from torch._dynamo.testing import CompileCounter, same
+
 
 """
 This is an example of a pure-python version of autograd implemented by
@@ -95,7 +95,7 @@ def grad(L, desired_results: List[Variable]) -> List[Variable]:
         # perform chain rule propagation specific to each compute
         dL_dinputs = entry.propagate(dL_doutputs)
 
-        # Accululate the gradient produced for each input.
+        # Accumulate the gradient produced for each input.
         # Each use of a variable produces some gradient dL_dinput for that
         # use. The multivariate chain rule tells us it is safe to sum
         # all the contributions together.

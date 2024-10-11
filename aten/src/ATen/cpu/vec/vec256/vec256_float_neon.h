@@ -16,8 +16,7 @@
 // However for now opting for STL, since we are not building
 // with Sleef for mobile yet.
 
-namespace at {
-namespace vec {
+namespace at::vec {
 // See Note [CPU_CAPABILITY namespace]
 inline namespace CPU_CAPABILITY {
 
@@ -308,6 +307,16 @@ public:
     }
     return loadu(res);
   };
+  bool has_inf_nan() const {
+    __at_align__ float tmp[size()];
+    store(tmp);
+    for (const auto i : c10::irange(size())) {
+      if(_isnan(tmp[i]) || _isinf(tmp[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
   Vectorized<float> map(float (*const f)(float)) const {
     __at_align__ float tmp[size()];
     store(tmp);
@@ -340,6 +349,12 @@ public:
       map(std::acos)
     );
   }
+  Vectorized<float> acosh() const {
+    return USE_SLEEF(
+      Vectorized<float>(Sleef_acoshf4_u10(values.val[0]), Sleef_acoshf4_u10(values.val[1])),
+      map(std::acosh)
+    );
+  }
   Vectorized<float> asin() const {
     return USE_SLEEF(
       Vectorized<float>(Sleef_asinf4_u10(values.val[0]), Sleef_asinf4_u10(values.val[1])),
@@ -350,6 +365,12 @@ public:
     return USE_SLEEF(
       Vectorized<float>(Sleef_atanf4_u10(values.val[0]), Sleef_atanf4_u10(values.val[1])),
       map(std::atan)
+    );
+  }
+  Vectorized<float> atanh() const {
+    return USE_SLEEF(
+      Vectorized<float>(Sleef_atanhf4_u10(values.val[0]), Sleef_atanhf4_u10(values.val[1])),
+      map(std::atanh)
     );
   }
   Vectorized<float> atan2(const Vectorized<float> &exp) const {
@@ -416,6 +437,9 @@ public:
       map(std::expm1)
     );
   }
+  Vectorized<float> exp_u20() const {
+    return exp();
+  }
   Vectorized<float> fmod(const Vectorized<float>& q) const {
     USE_SLEEF(
       {
@@ -457,6 +481,9 @@ public:
   }
   Vectorized<float> i0e() const {
     return map(calc_i0e);
+  }
+  Vectorized<float> digamma() const {
+    return map(calc_digamma);
   }
   Vectorized<float> igamma(const Vectorized<float> &x) const {
     __at_align__ float tmp[size()];
@@ -703,14 +730,17 @@ inline Vectorized<float> Vectorized<float>::frac() const {
   return *this - this->trunc();
 }
 
-// Implements the IEEE 754 201X `maximum` operation, which propagates NaN if
-// either input is a NaN.
-template <>
-Vectorized<float> inline maximum(const Vectorized<float>& a, const Vectorized<float>& b) {
-  float32x4_t r0 = vmaxq_f32(a.get_low(), b.get_low());
-  float32x4_t r1 = vmaxq_f32(a.get_high(), b.get_high());
-  return Vectorized<float>(r0, r1);
-}
+//Added sleef Implementation for Maximum
+Vectorized<float> inline maximum(const Vectorized<float>& a, const Vectorized<float>& b)  {
+  if(!a.has_inf_nan() && !b.has_inf_nan()){
+    return USE_SLEEF(
+      Vectorized<float>(Sleef_fmaxf4(a.get_low(), b.get_low()),Sleef_fmaxf4(a.get_high(), b.get_high())),
+      Vectorized<float>(vmaxq_f32(a.get_low(), b.get_low()),vmaxq_f32(a.get_high(), b.get_high())));
+  }
+  else{
+    return Vectorized<float>(vmaxq_f32(a.get_low(), b.get_low()),vmaxq_f32(a.get_high(), b.get_high()));
+  }
+  }
 
 // Implements the IEEE 754 201X `minimum` operation, which propagates NaN if
 // either input is a NaN.
@@ -796,12 +826,16 @@ inline Vectorized<float> Vectorized<float>::le(const Vectorized<float>& other) c
 template <>
 inline void convert(const float* src, int32_t* dst, int64_t n) {
   int64_t i;
+#ifndef __msvc_cl__
 #pragma unroll
+#endif
   for (i = 0; i <= (n - Vectorized<float>::size()); i += Vectorized<float>::size()) {
     vst1q_s32(dst + i, vcvtq_s32_f32(vld1q_f32(src + i)));
     vst1q_s32(dst + i + 4, vcvtq_s32_f32(vld1q_f32(src + i + 4)));
   }
+#ifndef __msvc_cl__
 #pragma unroll
+#endif
   for (; i < n; i++) {
     dst[i] = static_cast<int32_t>(src[i]);
   }
@@ -810,12 +844,16 @@ inline void convert(const float* src, int32_t* dst, int64_t n) {
 template <>
 inline void convert(const int32_t* src, float* dst, int64_t n) {
   int64_t i;
+#ifndef __msvc_cl__
 #pragma unroll
+#endif
   for (i = 0; i <= (n - Vectorized<float>::size()); i += Vectorized<float>::size()) {
     vst1q_f32(dst + i, vcvtq_f32_s32(vld1q_s32(src + i)));
     vst1q_f32(dst + i + 4, vcvtq_f32_s32(vld1q_s32(src + i + 4)));
   }
+#ifndef __msvc_cl__
 #pragma unroll
+#endif
   for (; i < n; i++) {
     dst[i] = static_cast<float>(src[i]);
   }
@@ -868,4 +906,4 @@ inline Vectorized<float> Vectorized<float>::erf() const{
 }
 #endif /* defined(aarch64) */
 
-}}}
+}} // namespace at::vec::CPU_CAPABILITY

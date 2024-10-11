@@ -1,3 +1,4 @@
+# mypy: allow-untyped-defs
 # Copyright (c) Facebook, Inc. and its affiliates.
 #
 # This source code is licensed under the BSD license found in the
@@ -22,6 +23,7 @@ from typing import (
 )
 
 import torch.nn as nn
+
 
 __all__ = [
     "always_wrap_policy",
@@ -208,6 +210,12 @@ class ModuleWrapPolicy(_Policy):
                 # Shallow copy to avoid coupling changes across modules
                 target_module_to_kwargs[module] = copy.copy(root_kwargs)
         return target_module_to_kwargs
+
+    def __call__(self, module, recurse, *args, **kwargs):
+        # nonwrapped_numel is not used.
+        return _module_wrap_policy(
+            module, recurse, nonwrapped_numel=-1, module_classes=self._module_classes
+        )
 
     def __repr__(self) -> str:
         return super().__repr__() + f"({self._module_classes_str})"
@@ -427,7 +435,7 @@ def enable_wrap(
             instances inside the context
     """
     kwargs = {
-        **{"wrapper_cls": wrapper_cls},
+        "wrapper_cls": wrapper_cls,
         **wrapper_kwargs,
     }
     with _ConfigAutoWrap(**kwargs):

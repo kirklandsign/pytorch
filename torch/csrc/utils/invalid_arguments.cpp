@@ -1,6 +1,5 @@
 #include <torch/csrc/utils/invalid_arguments.h>
 
-#include <torch/csrc/utils/memory.h>
 #include <torch/csrc/utils/python_strings.h>
 
 #include <c10/util/irange.h>
@@ -18,6 +17,11 @@ std::string py_typename(PyObject* object) {
 }
 
 struct Type {
+  Type() = default;
+  Type(const Type&) = default;
+  Type& operator=(const Type&) = default;
+  Type(Type&&) noexcept = default;
+  Type& operator=(Type&&) noexcept = default;
   virtual bool is_matching(PyObject* object) = 0;
   virtual ~Type() = default;
 };
@@ -109,10 +113,9 @@ struct Option {
   Option(bool is_variadic, bool has_out)
       : arguments(), is_variadic(is_variadic), has_out(has_out){};
   Option(const Option&) = delete;
-  Option(Option&& other) noexcept
-      : arguments(std::move(other.arguments)),
-        is_variadic(other.is_variadic),
-        has_out(other.has_out){};
+  Option(Option&& other) noexcept = default;
+  Option& operator=(const Option&) = delete;
+  Option& operator=(Option&&) = delete;
 
   std::vector<Argument> arguments;
   bool is_variadic;
@@ -136,25 +139,25 @@ std::vector<std::string> _splitString(
 std::unique_ptr<Type> _buildType(std::string type_name, bool is_nullable) {
   std::unique_ptr<Type> result;
   if (type_name == "float") {
-    result = torch::make_unique<MultiType>(MultiType{"float", "int", "long"});
+    result = std::make_unique<MultiType>(MultiType{"float", "int", "long"});
   } else if (type_name == "int") {
-    result = torch::make_unique<MultiType>(MultiType{"int", "long"});
+    result = std::make_unique<MultiType>(MultiType{"int", "long"});
   } else if (type_name.find("tuple[") == 0) {
     auto type_list = type_name.substr(6);
     type_list.pop_back();
     std::vector<std::unique_ptr<Type>> types;
     for (auto& type : _splitString(type_list, ","))
       types.emplace_back(_buildType(type, false));
-    result = torch::make_unique<TupleType>(std::move(types));
+    result = std::make_unique<TupleType>(std::move(types));
   } else if (type_name.find("sequence[") == 0) {
     auto subtype = type_name.substr(9);
     subtype.pop_back();
-    result = torch::make_unique<SequenceType>(_buildType(subtype, false));
+    result = std::make_unique<SequenceType>(_buildType(subtype, false));
   } else {
-    result = torch::make_unique<SimpleType>(type_name);
+    result = std::make_unique<SimpleType>(type_name);
   }
   if (is_nullable)
-    result = torch::make_unique<NullableType>(std::move(result));
+    result = std::make_unique<NullableType>(std::move(result));
   return result;
 }
 
@@ -376,9 +379,11 @@ std::string format_invalid_args(
     PyObject *key = nullptr, *value = nullptr;
     Py_ssize_t pos = 0;
 
+    Py_BEGIN_CRITICAL_SECTION(given_kwargs);
     while (PyDict_Next(given_kwargs, &pos, &key, &value)) {
       kwargs.emplace(THPUtils_unpackString(key), value);
     }
+    Py_END_CRITICAL_SECTION();
   }
 
   if (options.size() == 1) {

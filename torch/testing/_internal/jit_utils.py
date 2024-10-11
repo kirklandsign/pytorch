@@ -1,3 +1,5 @@
+# mypy: ignore-errors
+
 # Torch
 from torch.autograd import Variable
 from torch.autograd.function import _nested_map
@@ -177,7 +179,7 @@ class JitTestCase(JitCommonTestCase):
         fusion_groups : Dict[torch._C.Block, List[torch._C.Node]] = defaultdict(list)
         get_nodes_and_parents_recursively(graph, FUSION_GROUP, fusion_groups)
         self.assertTrue(len(fusion_groups) == 1, f'got {graph}')
-        (graph, fusion_nodes) = list(fusion_groups.items())[0]
+        (graph, fusion_nodes) = next(iter(fusion_groups.items()))
         # the block contains one FUSION_GROUP and the rest of nodes are `allowed_nodes`
         self.assertTrue(len(fusion_nodes) == 1, f'got {graph}')
         self.assertTrue(all(node.kind() in allowed_nodes for node in graph.nodes()),
@@ -768,7 +770,7 @@ def _get_py3_code(code, fn_name):
         return fn
 
 class TensorExprTestOptions:
-    def __init__(self):
+    def __init__(self) -> None:
         self.old_profiling_executor = torch._C._jit_set_profiling_executor(True)
         self.old_profiling_mode = torch._C._get_graph_executor_optimize(True)
 
@@ -782,7 +784,6 @@ class TensorExprTestOptions:
         torch._C._debug_set_fusion_group_inlining(False)
         self.old_te_must_use_llvm_cpu = torch._C._jit_get_te_must_use_llvm_cpu()
         torch._C._jit_set_te_must_use_llvm_cpu(False)
-        self.old_nvfuser = torch._C._jit_set_nvfuser_enabled(False)
 
     def restore(self):
         torch._C._jit_set_profiling_executor(self.old_profiling_executor)
@@ -793,7 +794,6 @@ class TensorExprTestOptions:
         torch._C._jit_override_can_fuse_on_cpu(self.old_cpu_fuser_state)
         torch._C._debug_set_fusion_group_inlining(self.old_fusion_inlining)
         torch._C._jit_set_te_must_use_llvm_cpu(self.old_te_must_use_llvm_cpu)
-        torch._C._jit_set_nvfuser_enabled(self.old_nvfuser)
 
 def clone_inputs(args):
     inputs: List[Union[torch.Tensor, List[torch.Tensor]]] = []

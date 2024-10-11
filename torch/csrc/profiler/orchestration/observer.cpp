@@ -4,9 +4,7 @@
 
 #include <utility>
 
-namespace torch {
-namespace profiler {
-namespace impl {
+namespace torch::profiler::impl {
 
 using GlobalManager = GlobalStateManager<ProfilerStateBase>;
 
@@ -94,8 +92,8 @@ ProfilerConfig ProfilerConfig::fromIValue(
 // ----------------------------------------------------------------------------
 // -- Profiler base class -----------------------------------------------------
 // ----------------------------------------------------------------------------
-/*explicit*/ ProfilerStateBase::ProfilerStateBase(const ProfilerConfig& config)
-    : c10::MemoryReportingInfoBase(), config_(config) {}
+/*explicit*/ ProfilerStateBase::ProfilerStateBase(ProfilerConfig config)
+    : c10::MemoryReportingInfoBase(), config_(std::move(config)) {}
 
 ProfilerStateBase::~ProfilerStateBase() {
   if (handle_) {
@@ -182,6 +180,4 @@ torch::profiler::impl::ProfilerConfig getProfilerConfig() {
   return state_ptr->config();
 }
 
-} // namespace impl
-} // namespace profiler
-} // namespace torch
+} // namespace torch::profiler::impl

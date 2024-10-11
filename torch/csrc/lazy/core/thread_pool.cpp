@@ -2,6 +2,7 @@
 
 #include <c10/util/Logging.h>
 #include <c10/util/irange.h>
+#include <c10/util/thread_name.h>
 #include <torch/csrc/lazy/core/config.h>
 #include <torch/csrc/lazy/core/metrics.h>
 
@@ -9,9 +10,9 @@
 #include <deque>
 #include <exception>
 #include <mutex>
+#include <thread>
 
-namespace torch {
-namespace lazy {
+namespace torch::lazy {
 namespace {
 
 class ThreadPool {
@@ -20,7 +21,10 @@ class ThreadPool {
     threads_.reserve(num_threads);
     for (const auto i : c10::irange(num_threads)) {
       (void)i; // Suppress unused variable warning
-      threads_.emplace_back([this]() { Worker(); });
+      threads_.emplace_back([this]() {
+        c10::setThreadName("pt_thread_pool");
+        Worker();
+      });
     }
   }
 
@@ -159,5 +163,4 @@ Completion ScheduleIoClosureWithCompletion(std::function<void()> closure) {
   return Completion(std::move(data));
 }
 
-} // namespace lazy
-} // namespace torch
+} // namespace torch::lazy

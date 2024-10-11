@@ -7,6 +7,7 @@ torch.mps
     :toctree: generated
     :nosignatures:
 
+    device_count
     synchronize
     get_rng_state
     set_rng_state
@@ -16,6 +17,7 @@ torch.mps
     set_per_process_memory_fraction
     current_allocated_memory
     driver_allocated_memory
+    recommended_max_memory
 
 MPS Profiler
 ------------
@@ -34,3 +36,9 @@ MPS Event
     :nosignatures:
 
     event.Event
+
+
+.. This module needs to be documented. Adding here in the meantime
+.. for tracking purposes
+.. py:module:: torch.mps.event
+.. py:module:: torch.mps.profiler

@@ -8,8 +8,7 @@
 #include <ATen/mps/MPSStream.h>
 #include <c10/util/Logging.h>
 
-namespace at {
-namespace mps {
+namespace at::mps {
 
 void MPSHooks::initMPS() const {
   C10_LOG_API_USAGE_ONCE("aten.init.mps");
@@ -20,19 +19,39 @@ bool MPSHooks::hasMPS() const {
   return at::mps::is_available();
 }
 
-bool MPSHooks::isOnMacOS13orNewer(unsigned minor) const {
-  switch (minor) {
-    case 0:
-      return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_0_PLUS);
-    case 1:
-      return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_1_PLUS);
-    case 2:
-      return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_2_PLUS);
-    case 3:
-      return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_3_PLUS);
+bool MPSHooks::isOnMacOSorNewer(unsigned major, unsigned minor) const {
+  switch (major) {
+    case 15:
+      if (minor > 0)
+        TORCH_WARN("Can't check whether running on 15.", minor, "+ returning one for 15.0+");
+      return is_macos_13_or_newer(MacOSVersion::MACOS_VER_15_0_PLUS);
+    case 14:
+      switch (minor) {
+        case 0:
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_14_0_PLUS);
+        case 4:
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_14_4_PLUS);
+        default:
+          TORCH_WARN("Can't check whether running on 14.", minor, "+ returning one for 14.4+");
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_14_4_PLUS);
+      }
+    case 13:
+      switch (minor) {
+        case 0:
+          return true;
+        case 1:
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_1_PLUS);
+        case 2:
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_2_PLUS);
+        case 3:
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_3_PLUS);
+        default:
+          TORCH_WARN("Can't check whether running on 13.", minor, "+ returning one for 13.3+");
+          return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_3_PLUS);
+      }
     default:
-      TORCH_WARN("Can't check whether running on 13.", minor, "+ returning one for 13.3+");
-      return is_macos_13_or_newer(MacOSVersion::MACOS_VER_13_3_PLUS);
+      TORCH_WARN("Checking for unexpected MacOS ", major, ".", minor, " returning false");
+      return false;
   }
 }
 
@@ -70,6 +89,10 @@ size_t MPSHooks::getCurrentAllocatedMemory() const {
 
 size_t MPSHooks::getDriverAllocatedMemory() const {
   return at::mps::getIMPSAllocator()->getDriverAllocatedMemory();
+}
+
+size_t MPSHooks::getRecommendedMaxMemory() const {
+  return at::mps::getIMPSAllocator()->getRecommendedMaxMemory();
 }
 
 void MPSHooks::setMemoryFraction(double ratio) const {
@@ -112,10 +135,17 @@ double MPSHooks::elapsedTimeOfEvents(uint32_t start_event_id, uint32_t end_event
   return at::mps::getMPSEventPool()->elapsedTime(start_event_id, end_event_id);
 }
 
+bool MPSHooks::isPinnedPtr(const void* data) const {
+  return at::mps::isMPSPinnedPtr(data);
+}
+
+Allocator* MPSHooks::getPinnedMemoryAllocator() const {
+  return at::mps::getIMPSAllocator(true);
+}
+
 using at::MPSHooksRegistry;
 using at::RegistererMPSHooksRegistry;
 
 REGISTER_MPS_HOOKS(MPSHooks);
 
-} // namespace mps
-} // namespace at
+} // namespace at::mps

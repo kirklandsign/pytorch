@@ -1,12 +1,14 @@
+# mypy: allow-untyped-defs
 import inspect
-import pathlib
 import sys
 import typing
 from collections import defaultdict
+from pathlib import Path
 from types import CodeType
 from typing import Dict, Iterable, List, Optional
 
 import torch
+
 
 _IS_MONKEYTYPE_INSTALLED = True
 try:
@@ -37,9 +39,7 @@ def is_torch_native_class(cls):
 
 
 def get_type(type):
-    """
-    Helper function which converts the given type to a torchScript acceptable format.
-    """
+    """Convert the given type to a torchScript acceptable format."""
     if isinstance(type, str):
         return type
     elif inspect.getmodule(type) == typing:
@@ -59,7 +59,8 @@ def get_type(type):
 
 
 def get_optional_of_element_type(types):
-    """
+    """Extract element type, return as `Optional[element type]` from consolidated types.
+
     Helper function to extracts the type of the element to be annotated to Optional
     from the list of consolidated types and returns `Optional[element type]`.
     TODO: To remove this check once Union support lands.
@@ -88,7 +89,7 @@ if _IS_MONKEYTYPE_INSTALLED:
             self.traces.append(trace)
 
     class JitTypeTraceStore(CallTraceStore):
-        def __init__(self):
+        def __init__(self) -> None:
             super().__init__()
             # A dictionary keeping all collected CallTrace
             # key is fully qualified name of called function
@@ -145,10 +146,7 @@ if _IS_MONKEYTYPE_INSTALLED:
             self.s = s
 
         def trace_logger(self) -> JitTypeTraceStoreLogger:
-            """
-            Returns a JitCallTraceStoreLogger that logs to the configured
-            trace store.
-            """
+            """Return a JitCallTraceStoreLogger that logs to the configured trace store."""
             return JitTypeTraceStoreLogger(self.trace_store())
 
         def trace_store(self) -> CallTraceStore:
@@ -161,23 +159,23 @@ else:
     # When MonkeyType is not installed, we provide dummy class definitions
     # for the below classes.
     class JitTypeTraceStoreLogger:  # type:  ignore[no-redef]
-        def __init__(self):
+        def __init__(self) -> None:
             pass
 
     class JitTypeTraceStore:  # type:  ignore[no-redef]
-        def __init__(self):
+        def __init__(self) -> None:
             self.trace_records = None
 
     class JitTypeTraceConfig:  # type:  ignore[no-redef]
-        def __init__(self):
+        def __init__(self) -> None:
             pass
 
-    monkeytype_trace = None  # noqa: F811
+    monkeytype_trace = None  # type: ignore[assignment]  # noqa: F811
 
 
 def jit_code_filter(code: CodeType) -> bool:
-    """
-    Custom CodeFilter for Torchscript to trace forward calls.
+    """Codefilter for Torchscript to trace forward calls.
+
     The custom CodeFilter is required while scripting a FX Traced forward calls.
     FX Traced forward calls have `code.co_filename` start with '<' which is used
     to exclude tracing of stdlib and site-packages in the default code filter.
@@ -192,5 +190,5 @@ def jit_code_filter(code: CodeType) -> bool:
     ):
         return False
 
-    filename = pathlib.Path(code.co_filename).resolve()
+    filename = Path(code.co_filename).resolve()
     return not any(_startswith(filename, lib_path) for lib_path in LIB_PATHS)

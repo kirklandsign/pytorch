@@ -9,7 +9,7 @@ Work::Work(
     int rank,
     OpType opType,
     const char* profilingTitle,
-    const c10::optional<std::vector<at::Tensor>>& inputTensors)
+    const std::optional<std::vector<at::Tensor>>& inputTensors)
     : rank_(rank), opType_(opType) {
   if (profilingTitle != nullptr) {
     auto recordingFunction =
@@ -128,7 +128,11 @@ void Work::finishAndThrow(std::exception_ptr exception) {
 }
 
 float Work::getDuration() const {
-  TORCH_CHECK(false, "Only ProcessGrouppNCCL::WorkNCCL supports getDuration.");
+  TORCH_CHECK(false, "This Backend doesn't support getDuration.");
+}
+
+uint64_t Work::getSequencenumber() const {
+  TORCH_CHECK(false, "This Backend doesn't support getSequencenumber.");
 }
 
 class FutureWrappingWork : public Work {

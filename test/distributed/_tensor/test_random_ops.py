@@ -5,16 +5,13 @@ import itertools
 
 import torch
 import torch.distributed._functional_collectives as funcol
-import torch.distributed._tensor.random as random
-
+import torch.distributed.tensor._random as random
 from torch.distributed._tensor import DeviceMesh, DTensor
 from torch.distributed._tensor._utils import compute_local_shape_and_global_offset
 from torch.distributed._tensor.api import distribute_tensor
 from torch.distributed._tensor.placement_types import Replicate, Shard
-from torch.distributed._tensor.random import is_rng_supported_mesh, manual_seed
-
 from torch.distributed.distributed_c10d import broadcast_object_list
-
+from torch.distributed.tensor._random import is_rng_supported_mesh, manual_seed
 from torch.testing._internal.common_utils import run_tests
 from torch.testing._internal.distributed._tensor.common_dtensor import (
     DTensorTestBase,
@@ -50,10 +47,6 @@ class DistTensorRandomInitTest(DTensorTestBase):
             dtensor = init_op(dtensor, *args, **kwargs)
             local_tensor = dtensor.to_local()
 
-            # allgather the local tensors
-            dtensor = dtensor.redistribute(device_mesh, [Replicate()])
-            local_tensor_gathered = dtensor.to_local()
-
             # compare with local tensors from other ranks
             for other_rank in range(self.world_size):
                 if self.rank != other_rank:
@@ -64,7 +57,7 @@ class DistTensorRandomInitTest(DTensorTestBase):
                         ),
                     ]
                     # other rank should have a different local tensor
-                    self.assertNotEqual(local_tensor_gathered[slice_idx], local_tensor)
+                    self.assertNotEqual(dtensor.full_tensor()[slice_idx], local_tensor)
 
     @with_comms
     def test_init_ops(self):
@@ -76,6 +69,11 @@ class DistTensorRandomInitTest(DTensorTestBase):
         )
         self._run_init_op(torch.nn.init.normal_, mean=1.5, std=0.8)
         self._run_init_op(torch.nn.init.uniform_, a=0, b=1.2)
+
+        for dtype in (torch.float32, torch.float16):
+            self._run_init_op(torch.rand_like, dtype=dtype)
+            self._run_init_op(torch.randn_like, dtype=dtype)
+            self._run_init_op(torch.randint_like, low=0, high=100, dtype=dtype)
 
 
 class DistTensorRandomOpTest(DTensorTestBase):
@@ -276,10 +274,7 @@ class DistTensorRandomOpTest(DTensorTestBase):
             # the local shard
             local_tensor = dtensor.to_local()
             # allgather the local tensors
-            dtensor = dtensor.redistribute(
-                device_mesh, [Replicate(), Replicate(), Replicate()]
-            )
-            local_tensor_gathered = dtensor.to_local()
+            full_tensor = dtensor.full_tensor()
 
             # compare local tensor with each other shard
             for other_local_shard in local_shard_comb:
@@ -288,9 +283,9 @@ class DistTensorRandomOpTest(DTensorTestBase):
                     slice(offset, offset + size) for offset, size in other_local_shard
                 ]
                 if local_shard_offset == other_local_shard_offset:
-                    self.assertEqual(local_tensor_gathered[slice_idx], local_tensor)
+                    self.assertEqual(full_tensor[slice_idx], local_tensor)
                 else:
-                    self.assertNotEqual(local_tensor_gathered[slice_idx], local_tensor)
+                    self.assertNotEqual(full_tensor[slice_idx], local_tensor)
 
     @with_comms
     @skip_if_lt_x_gpu(4)

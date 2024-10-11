@@ -1,15 +1,12 @@
 #pragma once
 
 #include <torch/csrc/distributed/c10d/Store.hpp>
-#include <memory>
 
 namespace c10d {
 
 class TORCH_API PrefixStore : public Store {
  public:
   explicit PrefixStore(std::string prefix, c10::intrusive_ptr<Store> store);
-
-  ~PrefixStore() override = default;
 
   using Store::set;
   void set(const std::string& key, const std::vector<uint8_t>& value) override;
@@ -54,6 +51,9 @@ class TORCH_API PrefixStore : public Store {
   bool hasExtendedApi() const override;
 
   c10::intrusive_ptr<Store> getUnderlyingStore();
+
+  // Recursively to fetch the store before layers of wrapping with PrefixStore.
+  c10::intrusive_ptr<Store> getUnderlyingNonPrefixStore();
 
  protected:
   std::string prefix_;

@@ -7,11 +7,8 @@
 #include <c10/util/Exception.h>
 #include <c10/util/irange.h>
 
-#include <array>
 #include <cmath>
 #include <cstdint>
-#include <functional>
-#include <memory>
 #include <regex>
 #include <string>
 #include <tuple>
@@ -21,8 +18,7 @@
 
 using namespace torch::nn::utils::rnn;
 
-namespace torch {
-namespace nn {
+namespace torch::nn {
 
 /// These must line up with the CUDNN mode codes:
 /// https://docs.nvidia.com/deeplearning/sdk/cudnn-developer-guide/index.html#cudnnRNNMode_t
@@ -30,13 +26,13 @@ enum class CuDNNMode { RNN_RELU = 0, RNN_TANH = 1, LSTM = 2, GRU = 3 };
 
 static CuDNNMode get_cudnn_mode_for_rnn(
     detail::RNNOptionsBase::rnn_options_base_mode_t mode) {
-  if (c10::get_if<enumtype::kRNN_RELU>(&mode)) {
+  if (std::holds_alternative<enumtype::kRNN_RELU>(mode)) {
     return CuDNNMode::RNN_RELU;
-  } else if (c10::get_if<enumtype::kRNN_TANH>(&mode)) {
+  } else if (std::holds_alternative<enumtype::kRNN_TANH>(mode)) {
     return CuDNNMode::RNN_TANH;
-  } else if (c10::get_if<enumtype::kLSTM>(&mode)) {
+  } else if (std::holds_alternative<enumtype::kLSTM>(mode)) {
     return CuDNNMode::LSTM;
-  } else if (c10::get_if<enumtype::kGRU>(&mode)) {
+  } else if (std::holds_alternative<enumtype::kGRU>(mode)) {
     return CuDNNMode::GRU;
   } else {
     TORCH_CHECK(false, "Unknown mode: ", torch::enumtype::get_enum_name(mode));
@@ -94,19 +90,19 @@ void RNNImplBase<Derived>::reset() {
 
   if (options_base.proj_size() > 0) {
     TORCH_CHECK(
-        c10::get_if<enumtype::kLSTM>(&options_base.mode()),
+        std::get_if<enumtype::kLSTM>(&options_base.mode()),
         "proj_size argument is only supported for LSTM, not RNN or GRU");
   }
 
   int64_t gate_size = 0;
-  if (c10::get_if<enumtype::kLSTM>(&options_base.mode())) {
+  if (std::holds_alternative<enumtype::kLSTM>(options_base.mode())) {
     gate_size = 4 * options_base.hidden_size();
-  } else if (c10::get_if<enumtype::kGRU>(&options_base.mode())) {
+  } else if (std::holds_alternative<enumtype::kGRU>(options_base.mode())) {
     gate_size = 3 * options_base.hidden_size();
     // NOLINTNEXTLINE(bugprone-branch-clone)
-  } else if (c10::get_if<enumtype::kRNN_TANH>(&options_base.mode())) {
+  } else if (std::holds_alternative<enumtype::kRNN_TANH>(options_base.mode())) {
     gate_size = options_base.hidden_size();
-  } else if (c10::get_if<enumtype::kRNN_RELU>(&options_base.mode())) {
+  } else if (std::holds_alternative<enumtype::kRNN_RELU>(options_base.mode())) {
     gate_size = options_base.hidden_size();
   } else {
     TORCH_CHECK(
@@ -157,13 +153,11 @@ void RNNImplBase<Derived>::reset() {
       }
 
       for (const auto i : c10::irange(param_names.size())) {
-        auto name = param_names[i];
-        auto param = layer_params[i];
-        this->register_parameter(name, param);
+        this->register_parameter(param_names[i], std::move(layer_params[i]));
       }
       flat_weights_names_.insert(
           flat_weights_names_.end(), param_names.begin(), param_names.end());
-      all_weights_.emplace_back(param_names);
+      all_weights_.emplace_back(std::move(param_names));
     }
   }
 
@@ -405,9 +399,9 @@ template class RNNImplBase<RNNImpl>;
 
 static detail::RNNOptionsBase::rnn_options_base_mode_t
 compute_rnn_options_base_mode(RNNOptions::nonlinearity_t nonlinearity) {
-  if (c10::get_if<enumtype::kTanh>(&nonlinearity)) {
+  if (std::holds_alternative<enumtype::kTanh>(nonlinearity)) {
     return torch::kRNN_TANH;
-  } else if (c10::get_if<enumtype::kReLU>(&nonlinearity)) {
+  } else if (std::holds_alternative<enumtype::kReLU>(nonlinearity)) {
     return torch::kRNN_RELU;
   } else {
     TORCH_CHECK(
@@ -453,7 +447,7 @@ std::tuple<Tensor, Tensor> RNNImpl::forward_helper(
 
   std::tuple<Tensor, Tensor> result;
   if (!batch_sizes.defined()) {
-    if (c10::get_if<enumtype::kRNN_TANH>(&options_base.mode())) {
+    if (std::holds_alternative<enumtype::kRNN_TANH>(options_base.mode())) {
       result = torch::rnn_tanh(
           input,
           hx,
@@ -464,7 +458,8 @@ std::tuple<Tensor, Tensor> RNNImpl::forward_helper(
           this->is_training(),
           options_base.bidirectional(),
           options_base.batch_first());
-    } else if (c10::get_if<enumtype::kRNN_RELU>(&options_base.mode())) {
+    } else if (std::holds_alternative<enumtype::kRNN_RELU>(
+                   options_base.mode())) {
       result = torch::rnn_relu(
           input,
           hx,
@@ -482,7 +477,7 @@ std::tuple<Tensor, Tensor> RNNImpl::forward_helper(
           torch::enumtype::get_enum_name(options_base.mode()));
     }
   } else {
-    if (c10::get_if<enumtype::kRNN_TANH>(&options_base.mode())) {
+    if (std::holds_alternative<enumtype::kRNN_TANH>(options_base.mode())) {
       result = torch::rnn_tanh(
           input,
           batch_sizes,
@@ -493,7 +488,8 @@ std::tuple<Tensor, Tensor> RNNImpl::forward_helper(
           options_base.dropout(),
           this->is_training(),
           options_base.bidirectional());
-    } else if (c10::get_if<enumtype::kRNN_RELU>(&options_base.mode())) {
+    } else if (std::holds_alternative<enumtype::kRNN_RELU>(
+                   options_base.mode())) {
       result = torch::rnn_relu(
           input,
           batch_sizes,
@@ -524,8 +520,7 @@ std::tuple<Tensor, Tensor> RNNImpl::forward(const Tensor& input, Tensor hx) {
   auto sorted_indices = torch::Tensor();
   auto unsorted_indices = torch::Tensor();
 
-  Tensor output, hidden;
-  std::tie(output, hidden) = this->forward_helper(
+  auto [output, hidden] = this->forward_helper(
       input, batch_sizes, sorted_indices, max_batch_size, std::move(hx));
 
   return std::make_tuple(
@@ -541,8 +536,7 @@ std::tuple<PackedSequence, Tensor> RNNImpl::forward_with_packed_input(
   const auto& unsorted_indices = packed_input.unsorted_indices();
   auto max_batch_size = batch_sizes[0].item<int64_t>();
 
-  Tensor output, hidden;
-  std::tie(output, hidden) = this->forward_helper(
+  auto [output, hidden] = this->forward_helper(
       input, batch_sizes, sorted_indices, max_batch_size, std::move(hx));
 
   auto output_packed =
@@ -676,9 +670,7 @@ std::tuple<Tensor, std::tuple<Tensor, Tensor>> LSTMImpl::forward(
   auto sorted_indices = torch::Tensor();
   auto unsorted_indices = torch::Tensor();
 
-  Tensor output;
-  std::tuple<Tensor, Tensor> hidden;
-  std::tie(output, hidden) = this->forward_helper(
+  auto [output, hidden] = this->forward_helper(
       input, batch_sizes, sorted_indices, max_batch_size, std::move(hx_opt));
 
   return std::make_tuple(
@@ -695,9 +687,7 @@ std::tuple<PackedSequence, std::tuple<Tensor, Tensor>> LSTMImpl::
   const auto& unsorted_indices = packed_input.unsorted_indices();
   auto max_batch_size = batch_sizes[0].item<int64_t>();
 
-  Tensor output;
-  std::tuple<Tensor, Tensor> hidden;
-  std::tie(output, hidden) = this->forward_helper(
+  auto [output, hidden] = this->forward_helper(
       input, batch_sizes, sorted_indices, max_batch_size, std::move(hx_opt));
 
   auto output_packed =
@@ -777,8 +767,7 @@ std::tuple<Tensor, Tensor> GRUImpl::forward(const Tensor& input, Tensor hx) {
   auto sorted_indices = torch::Tensor();
   auto unsorted_indices = torch::Tensor();
 
-  Tensor output, hidden;
-  std::tie(output, hidden) = this->forward_helper(
+  auto [output, hidden] = this->forward_helper(
       input, batch_sizes, sorted_indices, max_batch_size, std::move(hx));
 
   return std::make_tuple(
@@ -794,8 +783,7 @@ std::tuple<PackedSequence, Tensor> GRUImpl::forward_with_packed_input(
   const auto& unsorted_indices = packed_input.unsorted_indices();
   auto max_batch_size = batch_sizes[0].item<int64_t>();
 
-  Tensor output, hidden;
-  std::tie(output, hidden) = this->forward_helper(
+  auto [output, hidden] = this->forward_helper(
       input, batch_sizes, sorted_indices, max_batch_size, std::move(hx));
 
   auto output_packed =
@@ -872,7 +860,7 @@ void RNNCellImplBase<Derived>::pretty_print(std::ostream& stream) const {
 template <typename Derived>
 void RNNCellImplBase<Derived>::check_forward_input(
     const Tensor& input,
-    const string name) const {
+    const string& name) const {
   TORCH_CHECK(
       input.dim() == 1 || input.dim() == 2,
       "Expected ",
@@ -903,7 +891,7 @@ RNNCellImpl::RNNCellImpl(const RNNCellOptions& options_)
           /*num_chunks=*/1)),
       options(options_) {}
 
-Tensor RNNCellImpl::forward(const Tensor& input, Tensor hx) {
+Tensor RNNCellImpl::forward(const Tensor& input, const Tensor& hx) {
   this->check_forward_input(input, "input");
   this->check_forward_input(hx, "hidden");
 
@@ -920,10 +908,10 @@ Tensor RNNCellImpl::forward(const Tensor& input, Tensor hx) {
     r_hx = is_batched ? hx : hx.unsqueeze(0);
   }
 
-  if (c10::get_if<enumtype::kTanh>(&options.nonlinearity())) {
+  if (std::holds_alternative<enumtype::kTanh>(options.nonlinearity())) {
     ret = torch::rnn_tanh_cell(
         r_input, r_hx, weight_ih, weight_hh, bias_ih, bias_hh);
-  } else if (c10::get_if<enumtype::kReLU>(&options.nonlinearity())) {
+  } else if (std::holds_alternative<enumtype::kReLU>(options.nonlinearity())) {
     ret = torch::rnn_relu_cell(
         r_input, r_hx, weight_ih, weight_hh, bias_ih, bias_hh);
   } else {
@@ -1011,7 +999,7 @@ GRUCellImpl::GRUCellImpl(const GRUCellOptions& options_)
           /*num_chunks=*/3)),
       options(options_) {}
 
-Tensor GRUCellImpl::forward(const Tensor& input, Tensor hx) {
+Tensor GRUCellImpl::forward(const Tensor& input, const Tensor& hx) {
   this->check_forward_input(input, "input");
   this->check_forward_input(hx, "hidden");
 
@@ -1037,5 +1025,4 @@ Tensor GRUCellImpl::forward(const Tensor& input, Tensor hx) {
   return ret;
 }
 
-} // namespace nn
-} // namespace torch
+} // namespace torch::nn
